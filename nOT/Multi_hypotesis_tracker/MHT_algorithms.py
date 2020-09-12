@@ -1,7 +1,9 @@
 import numpy as np
 
 from Domain.Models.distributions import Gaussian, GaussianMixture, MultiGaussianMixture
+from Domain.assignment_algorithms import montecarlo_assignment
 from Kalman_filters.kalman_filter import kalman_prediction, kalman_update
+
 
 def HO_MHT_LG(p_prior, Z, n, PD, lamb_c, F, Q, H, R, Nmax, M, tol_prune):
     # Dimensions
@@ -26,7 +28,9 @@ def HO_MHT_LG(p_prior, Z, n, PD, lamb_c, F, Q, H, R, Nmax, M, tol_prune):
     for p_h_kmin1 in p_pred.mixtures:
         L = create_cost_matrix(p_h_kmin1, Z, n, PD, lamb_c, H, R)
         M = 10
-        theta_stars = compute_M_associations(L, M)
+        theta_stars, costs = compute_M_associations(L, M)
+        print(f'theta_stars = {theta_stars}')
+        print(f'costs = {costs}')
         for m in range(theta_stars.shape[0]):
             p_h_k = []
             # hk += 1
@@ -48,8 +52,6 @@ def HO_MHT_LG(p_prior, Z, n, PD, lamb_c, F, Q, H, R, Nmax, M, tol_prune):
     # Normalize log-weights
     l = l_tilde / sum(l_tilde) # Yes but no
     p = MultiGaussianMixture(p, l)
-
-            
 
 
 def create_cost_matrix(p_h, Z, n, PD, lamb_c, H, R):
@@ -75,4 +77,5 @@ def create_cost_matrix(p_h, Z, n, PD, lamb_c, H, R):
     return L
 
 def compute_M_associations(L, M):
-    return np.array([0])
+    N = 200
+    return montecarlo_assignment(L, M, N)
